@@ -1,11 +1,45 @@
-*
-!.gitignore
+# Add directories, files, and symlinks which shall not be stored within
+# this git repository here.
 
-!remarkable.php
+# Placeholder files for directories needed to be inside git but empty
+!*.gitignore
 
-!documentation.rem
-!quickref.txt
+# JetBrains - project settings
+/.idea/
 
-!README.txt
-!LICENCE.txt
-!HISTORY.txt
+# Eclipse - project settings
+/.project
+/.settings
+/.buildpath
+/.externalToolBuilders
+
+# Sublime Text 2 - project files
+/*.sublime-project
+/*.sublime-workspace
+
+# Numerous always-ignore extensions
+*.diff
+*.err
+*.orig
+*.log
+*.rej
+*.swo
+*.swp
+*.vi
+*~
+*.sass-cache
+
+# OS or Editor folders
+.DS_Store
+.cache
+.project
+.settings
+.tmproj
+nbproject
+Thumbs.db
+
+# Configuration files to be customized
+
+# Cache and log files
+
+# Generated files, vendor libraries
