@@ -1,0 +1,37 @@
+{
+    "name": "marenkay/remarkable",
+    "type": "library",
+    "description": "ReMarkable content parser",
+    "homepage": "http://camendesign.com/remarkable",
+    "keywords": ["markdown", "remarkable"],
+    "license": "CC-BY-3.0",
+    "authors": [
+        {
+            "name": "Daniel S. Reichenbach",
+            "email": "daniel@kogitoapp.com",
+            "homepage": "http://marenkay.com",
+            "role": "Developer"
+        },
+        {
+            "name": "Kroc Camen",
+            "email": "kroccamen@gmail.com",
+            "homepage": "http://camendesign.com",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "issues": "http://github.com/danielsreichenbach/ReMarkable/issues",
+        "source": "http://github.com/danielsreichenbach/ReMarkable"
+    },
+    "require": {
+        "php": ">=5.3"
+    },
+    "autoload": {
+        "psr-0": { "marenkay\\remarkable": "src" }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0.x-dev"
+        }
+    }
+}

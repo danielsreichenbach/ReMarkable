@@ -38,19 +38,19 @@ function reMarkable (
 	   chars wide and seems like a modern enough standard for code compared to the behaviour of writing readme files at
 	   77 chars wide because that’s the viewport of a maximised Notepad window on a 640x480 screen. tabs of 8 are used
 	   because that is what Firefox & Notepad use and it maintains the same rendering in both the editor, and browser */
-	
+
 	//if an esentially empty string is given, return blank
 	if (!strlen (trim ($source_text))) return '';
-	
+
 	//unify carriage returns (if you happen to be processing ReMarkable files written on Windows/Linux/Mac &c.)
 	//a blank line is added to the end to allow lists and blockquotes to convert if the user leaves no trailing line
 	//we don’t left-trim inline whitespace in case the source text starts with a purely typographical tab indent
 	$source_text = trim (rtrim (preg_replace ('/\r\n?/', "\n", $source_text)), "\n")."\n\n";
-	
+
 	//will we be using the X in XHTML?
 	$x = ($options && REMARKABLE_NOXHTML) ? '' : ' /';
-	
-	
+
+
 	/* list of mime-types for hyperlinks pointing directly to a file:
 	   -------------------------------------------------------------------------------------------------------------- */
 	//note: this is absolutely not supposed to be a comprehensive list, quite the opposite in fact. this list is just
@@ -88,8 +88,8 @@ function reMarkable (
 		'mov'     => 'video/quicktime',			'avi'  => 'video/x-msvideo',
 		'ogv'     => 'video/ogg'
 	);
-	
-	
+
+
 	/* [1] preprocess and remove HTML
 	   ============================================================================================================== */
 	//run a set of regexes to remove and process chunks of text that can cause syntax conflicts. for example, in pre,
@@ -97,29 +97,29 @@ function reMarkable (
 	//these are removed and replaced by temporary placeholders in the form of “¡TAG######!” where TAG is the name of
 	//the HTML tag being removed, or other symbol and the number of hashes extends to the length of the content being
 	//removed. at the end, the removed content is placed back
-	
+
 	//this will be used to store the HTML until the end. it’ll expand for each HTML tag as it’s met
 	$placeholders = array ();
 	foreach (array (
 		//placeholders already in the text (e.g. documentation)
 		'@'	=> '/\xA1[@#A-Z1-6]+%*!/u',
-		
+
 		/* --- <pre> -------------------------------------------------------------------------------------------- */
 		//e.g.	~~~>			or	~~~ PHP ~~~>		(with optional language)
 		//	text goes here			code goes here
 		//	<~~~				<~~~
 		'PRE'	=> '/~~~(?: ([a-z0-6]+) ~~~)?>\n((?>(?R)|(?>.))*?)\n(\t*)<?~~~$/msi',
-		
+
 		/* --- <code> / <samp> ---------------------------------------------------------------------------------- */
 		//e.g.	Using `_emphasis_` will generate ``<em>emphasis</em>``.
 		'CODE'	=> '/``(.+?)``(?!`)/',
 		'SAMP'	=> '/`((?:``|[^`]+)+?)`(?!`)/',
-		
+
 		/* --- <!-- … ---> / &__TOC__; -------------------------------------------------------------------------- */
 		//HTML comments could contain ReMarkable syntax. the TOC marker is stored here as the “&” must not be
 		//encoded by ReMarkable (allowing for the TOC marker in CODE/PRE) and musn’t get wrapped in `<p>`
 		'#'	=> '/<!--(.*?)-->|&__TOC__;/s',
-		
+
 		/* --- <img /> / <a><img /></a> ------------------------------------------------------------------------- */
 		//img is dealt with here because the alt and title attributes could contain ReMarkable syntax, also the
 		//syntax allows you to create thumbnails and this has to be expanded into HTML
@@ -127,7 +127,7 @@ function reMarkable (
 		//	<"alt text" /path/to/image.png "title">			with alt-text and title
 		//	<"alt text" /path/to/thumb.jpg = /path/to/image.png>	thumbnail linking (can have title too)
 		'IMG'	=> '/<("[^"]*")( |\n\s*)(\S+?\.(?:png|gif|jpe?g|svgz?))(?:(?2)=(?2)(\S+?))?(?:(?2)((?1)))?>/i',
-		
+
 		/* ---- <a> --------------------------------------------------------------------------------------------- */
 		//e.g.	<Click here (http://google.com)>	with description (“http://” can be abbreviated “//”)
 		//	<Click here (blog/hello)>.		relative, with description
@@ -146,19 +146,19 @@ function reMarkable (
 				(						# $7 = folders and filename, relative URL
 					(?(4)\/|(?(1)|\/))			# slash required after full domain
 					[\/a-z0-9_!~*\'().;?:@&=+$,%-]*		# folders and filename
-				)?			
+				)?
 				(?:\x23[\S]+)?					# bookmark
 			)
 		)
 		(?(1)\))							# closing ) if description present
 		(?:[ ]("[^"]*"))?						# $8 = optional title
 		>/xi',
-		
+
 		/* --- <*> ---------------------------------------------------------------------------------------------- */
 		//this last item removes all remaining HTML tags. the regex negative before & after avoids accidentally
 		//detecting inline quotes `<<an example>>`
 		'*'	=> '/(?<!<)<(\/)?([a-z1-6]+)(?(1)>|(?: [^>]+)?>(?!>))/'
-		
+
 	//(the `if` here is just an inline way of setting `$offset` to 0 each loop without having to indent another level)
 	) as $tag => $regx) if (!$offset=0) while (
 		//we don’t use `preg_match_all` because we will be removing the found text and replacing it with sometimes
@@ -180,7 +180,7 @@ function reMarkable (
 				(strlen ($m[1][0]) ? '</code></pre>' : '</pre>')
 			;
 			break;
-			
+
 			//samp “` … `” and code “`` … ``” are inline pre blocks with contents displayed as-is
 			case 'CODE': /* --------------------------------------------------------------------------------- */
 			case 'SAMP':
@@ -189,7 +189,7 @@ function reMarkable (
 				($tag == 'CODE' ? '</code>' : '</samp>')
 			;
 			break;
-			
+
 			//syntax for ReMarkable images is replaced with the HTML, but not swapped for placeholders until
 			//all HTML tags are removed. this is done so that the open and close part of the `<a>` tag will be
 			//removed separately leaving the text between (for word wrapping). this also applies for the
@@ -211,7 +211,7 @@ function reMarkable (
 			//go back and find the next image and don’t swap for a placeholder yet (as described above)
 			//`continue 2` is used because `continue` will loop the `switch` statement, not the `while`
 			continue 2;
-			
+
 			//hyperlinks
 			case 'A': /* ------------------------------------------------------------------------------------ */
 			//get mime type (if known) of what’s being linked to
@@ -248,16 +248,16 @@ function reMarkable (
 			//return to the `while` and find next hyperlink. done so as to not replace the whole hyperlink,
 			//inner text and all with a placeholder. the next case will remove all HTML tags left behind
 			continue 2;
-			
+
 			//we don’t use “*” as the tag name, we set it according to the tag being removed
 			case '*': /* ------------------------------------------------------------------------------------ */
 			//get the placeholder name
 			$type = strtoupper ($m[2][0]);
-			
+
 			default:
 			$text = $m[0][0];
 		}
-		
+
 		//capture the element
 		$placeholders[$type][] = $text;
 		//replace with placeholder tag
@@ -269,12 +269,12 @@ function reMarkable (
 		//continue searching from after this placeholder
 		$offset = $m[0][1] + strlen ($m[0][0]);
 	}
-	
+
 	//encode essential HTML entities not already encoded (`&`, `<`, `>`),
 	//we do not double encode, so that entities that you’ve already written in the source text are kept
 	$source_text = htmlspecialchars ($source_text, ENT_NOQUOTES, 'UTF-8', false);
-	
-	
+
+
 	/* [2] auto-correction: replace some ASCII conventions with unicode / HTML
 	   ============================================================================================================== */
 	foreach (array (
@@ -300,10 +300,10 @@ function reMarkable (
 		'/(\B(?:\w+)?)\'(\w+\b)/'	=> '$1’$2',
 		//plus-minus: “+/-” -> "±"			//“:therefore:”
 		'/\+\/-/'			=> '±',		'/:therefore:|:ergo:/'		=> '∴'
-		
+
 	) as $regx => $replace) $source_text = preg_replace ($regx, $replace, $source_text);
-	
-	
+
+
 	/* [3] process inline markup
 	   ============================================================================================================== */
 	$source_text = preg_replace (array (
@@ -344,10 +344,10 @@ function reMarkable (
 		/*<dfn>*/	'"<dfn".(\'$2\'?" title=\"".stripslashes(\'$2\')."\"":"").">".stripslashes(\'$1\')."</dfn>"',
 		/*<abbr>*/	'"<abbr".(\'$2\'?" title=\"".stripslashes(\'$2\')."\"":"").">".stripslashes(\'$1\')."</abbr>"',
 		/*<small>*/	'<small>$1</small>'
-		
+
 	), $source_text);
-	
-	
+
+
 	/* [4] headings
 	   ============================================================================================================== */
 	while (preg_match (
@@ -362,7 +362,7 @@ function reMarkable (
 		//detect heading level (number of #’s or ‘=’ bar for H2 / ‘-’ bar for H3)
 		$h = strlen ($m1[1][0]) ? strlen ($m1[1][0]) : (substr ($m1[4][0], 0, 1) == "=" ? 2 : 3);
 		$title = &$m1[2][0]; $hid = &$m1[3][0];
-		
+
 		/* title case the heading:
 		   ------------------------------------------------------------------------------------------------------ */
 		/* original Title Case script © John Gruber <daringfireball.net>
@@ -373,32 +373,32 @@ function reMarkable (
 		$regx = '/\xA1[@#A-Z]+%*!|<\/?[^>]+>|&\S+;/u';
 		preg_match_all ($regx, $title, $html, PREG_OFFSET_CAPTURE);
 		$title = preg_replace ($regx, '', $title);
-		
+
 		//find each word (including punctuation attached)
 		preg_match_all ('/[\w\p{L}&`\'‘’"“\.@:\/\{\(\[<>_]+-? */u', $title, $m2, PREG_OFFSET_CAPTURE);
 		foreach ($m2[0] as $m3) {
 			//shorthand these- "match" and "index"
 			list ($m, $i) = $m3;
-			
+
 			//correct offsets for multi-byte characters (`PREG_OFFSET_CAPTURE` returns *byte*-offset)
 			//we fix this by recounting the text before the offset using multi-byte aware `strlen`
 			$i = mb_strlen (substr ($title, 0, $i), 'UTF-8');
-			
+
 			//find words that should always be lowercase…
 			//(never on the first word, and never if preceded by a colon)
-			$m = $i>0 && mb_substr ($title, max (0, $i-2), 1, 'UTF-8') !== ':' && 
+			$m = $i>0 && mb_substr ($title, max (0, $i-2), 1, 'UTF-8') !== ':' &&
 				!preg_match ('/[\x{2014}\x{2013}] ?/u', mb_substr ($title, max (0, $i-2), 2, 'UTF-8')) &&
 				 preg_match ('/^(a(nd?|s|t)?|b(ut|y)|en|for|i[fn]|o[fnr]|t(he|o)|vs?\.?|via)[ \-]/i', $m)
 			?	//…and convert them to lowercase
 				mb_strtolower ($m, 'UTF-8')
-				
+
 			//else:	brackets and other wrappers
 			: (	preg_match ('/[\'"_{(\[‘“]/u', mb_substr ($title, max (0, $i-1), 3, 'UTF-8'))
 			?	//convert first letter within wrapper to uppercase
 				mb_substr ($m, 0, 1, 'UTF-8')
 				.mb_strtoupper (mb_substr ($m, 1, 1, 'UTF-8'), 'UTF-8')
 				.mb_substr ($m, 2, mb_strlen ($m, 'UTF-8')-2, 'UTF-8')
-				
+
 			//else:	do not uppercase these cases
 			: (	preg_match ('/[\])}]/', mb_substr ($title, max (0, $i-1), 3, 'UTF-8')) ||
 				preg_match ('/[A-Z]+|&|\w+[._]\w+/u', mb_substr ($m, 1, mb_strlen ($m, 'UTF-8')-1, 'UTF-8'))
@@ -407,7 +407,7 @@ function reMarkable (
 			:	mb_strtoupper (mb_substr ($m, 0, 1, 'UTF-8'), 'UTF-8')
 				.mb_substr ($m, 1, mb_strlen ($m, 'UTF-8'), 'UTF-8')
 			));
-			
+
 			//resplice the title with the change (`substr_replace` is not multi-byte aware)
 			$title = mb_substr ($title, 0, $i, 'UTF-8').$m
 				 .mb_substr ($title, $i+mb_strlen ($m, 'UTF-8'), mb_strlen ($title, 'UTF-8'), 'UTF-8')
@@ -416,20 +416,20 @@ function reMarkable (
 		//restore the HTML
 		foreach ($html[0] as &$tag) $title = substr_replace ($title, $tag[0], $tag[1], 0);
 		/* ------------------------------------------------------------------------------------------------------ */
-		
+
 		//replace heading with HTML
 		$source_text = substr_replace ($source_text,
 			"<h$h".($hid ? " id=\"$hid\"" : '').">$title</h$h>\n\n",
 			$m1[0][1], strlen ($m1[0][0])
 		);
 	}
-	
-	
+
+
 	/* [5] blocks - lists / blockquotes
 	   ============================================================================================================== */
 	//see documentation (or read regex) for full list of supported bullet types. note that this has capturing groups
 	$bullet = '(?:([\x{2022}*+-])|(?-i:[a-z]\.|[ivxlcdm]+\.|#|(?:\d+\.){1,6}))(?: \(#([0-9a-z_-]+)\))?';
-	
+
 	//capture, convert and unindent lists and blockquotes, recursively: (I hope you’re fluent in regex)
 	do $source_text = preg_replace (array (
 		/* --- «whitespace» ------------------------------------------------------------------------------------- */
@@ -472,23 +472,23 @@ function reMarkable (
 				'.preg_replace("/^\\t/m","",stripslashes(\'$2\'))'.
 				'.(\'$3\'?"<figcaption>".trim(stripslashes(\'$3\'))."</figcaption>\n":"\n")."</figure>\n\n"',
 		/*<a><img></a>*/"$1\n$2\n$3"
-		
+
 	), $source_text, -1, $continue);
 	//because a list can contain another list / blockquote, once one is converted we loop again to catch the next level
 	while ($continue);
-	
-	
+
+
 	/* [6] indent and word-wrap
 	   ============================================================================================================== */
 	//start indenting at the base level for the whole document
 	$depth = $indent;
-	
+
 	//the regex section above places blank lines either side of paragraphs in lists and either side of any tag that
 	//begins / ends an indent. this section steps through these blank lines assessing the content inbetween:
 	foreach (preg_split ('/\n{2,}/', $source_text, -1, PREG_SPLIT_NO_EMPTY) as $chunk) {
 		//indent according to the current level
 		if ($depth) $chunk = preg_replace ('/^/m', str_repeat ("\t", $depth), $chunk);
-		
+
 		//check each condition…
 		foreach (array (
 			//PRE blocks (will always have no indent regardless if they are inside an indented block)
@@ -514,21 +514,21 @@ function reMarkable (
 				  |\#
 				)
 			)(?(1)%*!(?:.*?\1\2%!)?|[^>]*>)(?(2)(?:$|\n))/xui'
-			
+
 		) as $tag => $regx) if (
 			//once a match is found, capture the regex results in `$m` and stop searching
 			preg_match ($regx, $chunk, $m)
 		) break;
-		
+
 		//note: ReMarkable does not wrap paragraphs around block elements. the “p” condition therefore works in
 		//reverse and we know that an actual paragraph is matched when the regex doesn’t match and drops out of the
 		//list of conditions -- leaving `$m` as empty
-		
+
 		//the “li”, “dd” and not-“p” conditions contain a paragraph of text that has to be word-wrapped.
 		//this text is stored in the regex named capture group “p” -> `$m['p']`. if no match is made `(!$m)` then
 		//the whole chunk is a paragraph to be wrapped
 		$p = rtrim (!$m ? $chunk : @$m['p']);
-		
+
 		//as explained above, word-wrap these conditions:
 		if (($tag == 'li' || $tag == 'dd' || !$m) && $margin>0) {
 			//collapse whitespace in paragraphs. this removes HTML newlines (except before or after a `<br />`)
@@ -536,7 +536,7 @@ function reMarkable (
 			$p = rtrim (preg_replace ('/(?<!<br \/>|<br>)\n\t*+(?!<br \/>|<br>)/', ' ', $p));
 			//after a break, remove any double/triple indent. this is sometimes the case with LIs with IDs
 			$p = preg_replace ('/<br(?: \/)?>\n\t*+/', "<br$x>\n".str_repeat ("\t", $depth), $p);
-			
+
 			//word-wrap:
 			//calculate the current loss of margin due to the indent level
 			$width = $margin - (8 * ($depth+1));
@@ -552,7 +552,7 @@ function reMarkable (
 			);
 			while ($continue);
 		}
-		
+
 		//reconstruct the chunk
 		switch ($tag) {
 			case 'pre'  : $chunk = $m[1];                                                                 break;
@@ -569,7 +569,7 @@ function reMarkable (
 		}
 		$source_text = @$result .= "\n$chunk";
 	};
-	
+
 	/* [7] finalise
 	   ============================================================================================================== */
 	//tidy up the HTML
@@ -592,9 +592,9 @@ function reMarkable (
 		'/^\xA1PRE%*!\n(\t*)/mu'					=> "$1\n$1$0\n$1",
 		//remove tripple blank lines caused by combinations of the above
 		'/^(?:(\t*)\n){3}/m'						=> "$1\n$1\n"
-		
+
 	) as $regx => $replace) $source_text = preg_replace ($regx, $replace, $source_text);
-	
+
 	/* restore placeholders
 	   -------------------------------------------------------------------------------------------------------------- */
 	//restore in reverse order so that pre and code spans that contain placeholders [documentation] don’t conflict
@@ -603,7 +603,7 @@ function reMarkable (
 	foreach ($placeholders as $tag => &$tags) foreach ($tags as &$html) if (
 		preg_match ("/\\xA1$tag%*!/u", $source_text, $m, PREG_OFFSET_CAPTURE)
 	) $source_text = substr_replace ($source_text, $html, $m[0][1], strlen ($m[0][0]));
-	
+
 	/* auto table of contents
 	   -------------------------------------------------------------------------------------------------------------- */
 	//creates a table of contents from headings with IDs. this has to be done last because `<code>` spans in headings
@@ -615,7 +615,7 @@ function reMarkable (
 		foreach ($h as &$m) @$toc .= str_repeat ("\t", (int) $m[1]-2)."#\t<a href=\"#${m[2]}\">${m[3]}</a>\n";
 		$source_text = str_replace ('&__TOC__;', reMarkable ($toc, strlen ($i[1][0]), $margin), $source_text);
 	}
-	
+
 	//apply tab output preference
 	if ($options && (REMARKABLE_TABSPACE_2 || REMARKABLE_TABSPACE_4)) $source_text = preg_replace ('/^(\t+)/me', (
 		//8, 4, or 2 spaces?
@@ -624,7 +624,7 @@ function reMarkable (
 			? '        ' : ($options && REMARKABLE_TABSPACE_4 ? '    ' : '  ')
 		).'",strlen("$1"))'
 	), $source_text);
-	
+
 	//a trailing line break is never given so that ReMarkable can be used for short inline strings in your HTML
 	return trim ($source_text, "\n");
 }
