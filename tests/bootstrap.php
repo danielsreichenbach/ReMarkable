@@ -3,7 +3,7 @@
 /**
  * This file is part of the ReMarkable library.
  *
- * Copyright (c) 2012 Kroc Camen <kroccamen@gmail.com>
+ * Copyright (c) 2012 Kroc Camen <kroc@camendesign.com>
  * Copyright (c) 2013 Daniel S. Reichenbach <daniel@kogitoapp.com>
  *
  * For the full copyright and license information, please view the LICENSE.md
